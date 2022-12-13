@@ -269,6 +269,25 @@ CONTAINS
    lm = 25
    write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
 
+  CASE (hill_seabreeze2d_x)
+  ! parameters borrowed from hill2d_x
+   hm = 100.
+   xa = 5.0
+
+  ! parameters retained from seabreeze2d_x
+   stretch_grid = .true.
+   delt = 6.
+!   z_scale = .40
+   z_scale = 8000./config_flags%ztop
+   pi = 2.*asin(1.0)
+   write(6,*) ' pi is ',pi
+   nxc = (ide-ids)/2
+   nyc = jde/2
+   icm = ide/2
+! lm is the half width of the land in terms of grid points
+   lm = 25
+   write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
+
   CASE (les)
   !  FOR LES, set stretch to false
    stretch_grid = .false.
@@ -467,7 +486,7 @@ CONTAINS
                                    ids,ide, jds,jde, kds,kde,&
                                    ims,ime, jms,jme, kms,kme,&
                                    its,ite, jts,jte, kts,kte )
-   CASE(seabreeze2d_x)
+   CASE(seabreeze2d_x, hill_seabreeze2d_x)
 
     mminlu2 = ' '
     mminlu2(1:4) = 'USGS'
@@ -626,7 +645,7 @@ CONTAINS
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
      ENDDO
    ENDIF
-   CASE(convrad, seabreeze2d_x)
+   CASE(convrad, seabreeze2d_x, hill_seabreeze2d_x)
    IF (stretch_grid) THEN ! read eta_levels
      DO k=1, kde
       grid%znw(k) = model_config_rec%eta_levels(k)
@@ -890,7 +909,7 @@ CONTAINS
 #endif
 
   ideal_terrain: SELECT CASE ( model_config_rec%ideal_case )
-  CASE (hill2d_x)
+  CASE (hill2d_x, hill_seabreeze2d_x)
   DO j=jts,jte
   DO i=its,ite  
     grid%ht(i,j) = hm/(1.+(float(i-icm)/xa)**2)
@@ -1609,7 +1628,7 @@ CONTAINS
   ENDDO
   ENDDO
 
-  CASE(seabreeze2d_x)
+  CASE(seabreeze2d_x, hill_seabreeze2d_x)
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
      thtmp   = grid%t_2(i,1,j)+t0
