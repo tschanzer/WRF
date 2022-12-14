@@ -4,6 +4,10 @@
 *.mod
 *.exe
 
+# Other files
+#############
+.vscode
+
 # WRF/WPS temporary files
 #########################
 WPS/GRIBFILE.*
