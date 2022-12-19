@@ -3,10 +3,14 @@
 *.o
 *.mod
 *.exe
+*.output
+wrfinput_d*
 
 # Other files
 #############
 .vscode
+*~
+*.o????????
 
 # WRF/WPS temporary files
 #########################

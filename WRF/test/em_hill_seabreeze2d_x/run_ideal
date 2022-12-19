@@ -1,0 +1,12 @@
+#!/bin/bash
+#PBS -l walltime=300
+#PBS -l mem=4GB
+#PBS -l ncpus=4
+#PBS -j oe
+#PBS -q normal
+#PBS -l wd
+#PBS -W umask=0022
+#PBS -l storage=gdata/w42+scratch/w42
+#PBS -P w42
+
+./ideal.exe
