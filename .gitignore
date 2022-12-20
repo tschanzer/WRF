@@ -5,6 +5,7 @@
 *.exe
 *.output
 wrfinput_d*
+*.save*
 
 # Other files
 #############
