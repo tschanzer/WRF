@@ -432,21 +432,21 @@ em_seabreeze2d_x : wrf
 		echo " " ; \
 	fi
 
-em_hill_seabreeze2d_x : wrf
+em_africa_convection : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
-	( cd test/em_hill_seabreeze2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
-	( cd test/em_hill_seabreeze2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
-	( cd test/em_hill_seabreeze2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
+	( cd test/em_africa_convection ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	( cd test/em_africa_convection ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+	( cd test/em_africa_convection ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ; \
 		ln -sf ../../run/LANDUSE.TBL . ; \
 		ln -sf ../../run/RRTM_DATA . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
-		/bin/rm -f namelist.input ; cp ../test/em_hill_seabreeze2d_x/namelist.input . )
-	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_hill_seabreeze2d_x/input_sounding . )
+		/bin/rm -f namelist.input ; cp ../test/em_africa_convection/namelist.input . )
+	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_africa_convection/input_sounding . )
 	@echo " "
 	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"

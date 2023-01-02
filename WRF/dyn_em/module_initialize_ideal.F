@@ -269,7 +269,7 @@ CONTAINS
    lm = 25
    write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
 
-  CASE (hill_seabreeze2d_x)
+  CASE (africa_convection)
   ! parameters borrowed from hill2d_x
    hm = 100.
    xa = 5.0
@@ -486,7 +486,8 @@ CONTAINS
                                    ids,ide, jds,jde, kds,kde,&
                                    ims,ime, jms,jme, kms,kme,&
                                    its,ite, jts,jte, kts,kte )
-   CASE(seabreeze2d_x, hill_seabreeze2d_x)
+
+   CASE(seabreeze2d_x, africa_convection)
 
     mminlu2 = ' '
     mminlu2(1:4) = 'USGS'
@@ -509,38 +510,38 @@ CONTAINS
 !  here we initialize data that currently is not initialized
 !  in the input data
 
-    DO j = jts, jte
-      DO i = its, ite
-         grid%msft(i,j)     = 1.
-         grid%msfu(i,j)     = 1.
-         grid%msfv(i,j)     = 1.
-         grid%msftx(i,j)    = 1.
-         grid%msfty(i,j)    = 1.
-         grid%msfux(i,j)    = 1.
-         grid%msfuy(i,j)    = 1.
-         grid%msfvx(i,j)    = 1.
-         grid%msfvy(i,j)    = 1.
-         grid%msfvx_inv(i,j)= 1.
-         grid%sina(i,j)     = 0.
-         grid%cosa(i,j)     = 1.
-         grid%e(i,j)        = 0.
-         grid%f(i,j)        = 0.
-         grid%xlat(i,j)     = 30.
-         grid%xlong(i,j)     = 0.
-! Hard-wire the ocean-land configuration
-        if (i .ge. (icm-lm) .and. i .lt. (icm+lm)) then
-         grid%xland(i,j)     = 1.
-         grid%lu_index(i,j)  = 18
-         grid%tsk(i,j) = 280.0
-         grid%tmn(i,j) = 280.0
-        else
-         grid%xland(i,j)     = 2.
-         grid%lu_index(i,j)  = 16
-         grid%tsk(i,j) = 287.0
-         grid%tmn(i,j) = 280.0
-        end if
+      DO j = jts, jte
+        DO i = its, ite
+          grid%msft(i,j)     = 1.
+          grid%msfu(i,j)     = 1.
+          grid%msfv(i,j)     = 1.
+          grid%msftx(i,j)    = 1.
+          grid%msfty(i,j)    = 1.
+          grid%msfux(i,j)    = 1.
+          grid%msfuy(i,j)    = 1.
+          grid%msfvx(i,j)    = 1.
+          grid%msfvy(i,j)    = 1.
+          grid%msfvx_inv(i,j)= 1.
+          grid%sina(i,j)     = 0.
+          grid%cosa(i,j)     = 1.
+          grid%e(i,j)        = 0.
+          grid%f(i,j)        = 0.
+          grid%xlat(i,j)     = 30.
+          grid%xlong(i,j)     = 0.
+  ! Hard-wire the ocean-land configuration
+          if (i .ge. (icm-lm) .and. i .lt. (icm+lm)) then
+            grid%xland(i,j)     = 1.
+            grid%lu_index(i,j)  = 18
+            grid%tsk(i,j) = 280.0
+            grid%tmn(i,j) = 280.0
+          else
+            grid%xland(i,j)     = 2.
+            grid%lu_index(i,j)  = 16
+            grid%tsk(i,j) = 287.0
+            grid%tmn(i,j) = 280.0
+          end if
+        END DO
       END DO
-   END DO
 
 ! for Noah LSM, additional variables need to be initialized
 
@@ -645,7 +646,7 @@ CONTAINS
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
      ENDDO
    ENDIF
-   CASE(convrad, seabreeze2d_x, hill_seabreeze2d_x)
+   CASE(convrad, seabreeze2d_x, africa_convection)
    IF (stretch_grid) THEN ! read eta_levels
      DO k=1, kde
       grid%znw(k) = model_config_rec%eta_levels(k)
@@ -909,7 +910,7 @@ CONTAINS
 #endif
 
   ideal_terrain: SELECT CASE ( model_config_rec%ideal_case )
-  CASE (hill2d_x, hill_seabreeze2d_x)
+  CASE (hill2d_x, africa_convection)
   DO j=jts,jte
   DO i=its,ite  
     grid%ht(i,j) = hm/(1.+(float(i-icm)/xa)**2)
@@ -1628,7 +1629,7 @@ CONTAINS
   ENDDO
   ENDDO
 
-  CASE(seabreeze2d_x, hill_seabreeze2d_x)
+  CASE(seabreeze2d_x, africa_convection)
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
      thtmp   = grid%t_2(i,1,j)+t0
