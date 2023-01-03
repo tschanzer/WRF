@@ -136,6 +136,11 @@ CONTAINS
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
+!  variables for africa_convection
+   REAL :: albedo
+   REAL, PARAMETER :: albedo_min=0., albedo_step=0.05
+   INTEGER, PARAMETER :: landuse_start_num=42
+
    SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
    kds = grid%sd31 ; kde = grid%ed31 ;
@@ -487,7 +492,7 @@ CONTAINS
                                    ims,ime, jms,jme, kms,kme,&
                                    its,ite, jts,jte, kts,kte )
 
-   CASE(seabreeze2d_x, africa_convection)
+   CASE(seabreeze2d_x)
 
     mminlu2 = ' '
     mminlu2(1:4) = 'USGS'
@@ -583,6 +588,98 @@ CONTAINS
                                    ids,ide, jds,jde, kds,kde,&
                                    ims,ime, jms,jme, kms,kme,&
                                    its,ite, jts,jte, kts,kte )
+
+  CASE(africa_convection)
+
+    mminlu2 = ' '
+    mminlu2(1:4) = 'USGS'
+    CALL nl_set_mminlu(1, mminlu2)
+!   CALL nl_set_mminlu(1, 'USGS')
+    CALL nl_set_iswater(1,16)
+    CALL nl_set_isice(1,3)
+    CALL nl_set_cen_lat(1,20.)
+    CALL nl_set_cen_lon(1,0.)
+    CALL nl_set_truelat1(1,0.)
+    CALL nl_set_truelat2(1,0.)
+    CALL nl_set_moad_cen_lat (1,0.)
+    CALL nl_set_stand_lon (1,0.)
+    CALL nl_set_pole_lon (1,0.)
+    CALL nl_set_pole_lat (1,90.)
+    CALL nl_set_map_proj(1,0)
+!   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
+    CALL nl_get_iswater(1,grid%iswater)
+
+!  here we initialize data that currently is not initialized
+!  in the input data
+
+      DO j = jts, jte
+        DO i = its, ite
+          grid%msft(i,j)     = 1.
+          grid%msfu(i,j)     = 1.
+          grid%msfv(i,j)     = 1.
+          grid%msftx(i,j)    = 1.
+          grid%msfty(i,j)    = 1.
+          grid%msfux(i,j)    = 1.
+          grid%msfuy(i,j)    = 1.
+          grid%msfvx(i,j)    = 1.
+          grid%msfvy(i,j)    = 1.
+          grid%msfvx_inv(i,j)= 1.
+          grid%sina(i,j)     = 0.
+          grid%cosa(i,j)     = 1.
+          grid%e(i,j)        = 0.
+          grid%f(i,j)        = 0.
+          grid%xlat(i,j)     = 30.
+          grid%xlong(i,j)     = 0.
+          grid%tsk(i,j) = 280.0
+          grid%tmn(i,j) = 280.0
+          grid%xland(i,j)     = 1.
+          ! determine the desired albedo at this grid point
+          albedo = 1. - exp(((i - icm)/lm)**2)
+          ! convert albedo value to corresponding land use index
+          grid%lu_index(i,j) = landuse_start_num + nint((albedo - albedo_min)/albedo_step)
+        END DO
+      END DO
+
+! for Noah LSM, additional variables need to be initialized
+
+    seabreeze_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+      CASE (SLABSCHEME)
+
+      CASE (LSMSCHEME)
+
+        DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+              IF (grid%xland(i,j) .lt. 1.5) THEN
+                  grid%vegfra(i,j) = 50.
+                  grid%canwat(i,j) = 0.
+                  grid%ivgtyp(i,j) = 18
+                  grid%isltyp(i,j) = 8
+                  grid%xice(i,j) = 0.
+                  grid%snow(i,j) = 0.
+              ELSE
+                  grid%vegfra(i,j) = 0.
+                  grid%canwat(i,j) = 0.
+                  grid%ivgtyp(i,j) = 16
+                  grid%isltyp(i,j) = 14
+                  grid%xice(i,j) = 0.
+                  grid%snow(i,j) = 0.
+              ENDIF
+            END DO
+        END DO
+
+      CASE (RUCLSMSCHEME)
+
+    END SELECT seabreeze_masked_fields
+
+! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
+      CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
+                      grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
+                      grid%tsk,grid%tmn,grid%zs,grid%dzs,model_config_rec%num_soil_layers, &
+                      model_config_rec%sf_surface_physics(grid%id), &
+                                    ids,ide, jds,jde, kds,kde,&
+                                    ims,ime, jms,jme, kms,kme,&
+                                    its,ite, jts,jte, kts,kte )
 
    CASE (les)
 
@@ -910,7 +1007,19 @@ CONTAINS
 #endif
 
   ideal_terrain: SELECT CASE ( model_config_rec%ideal_case )
-  CASE (hill2d_x, africa_convection)
+  CASE (hill2d_x)
+  DO j=jts,jte
+  DO i=its,ite  
+    grid%ht(i,j) = hm/(1.+(float(i-icm)/xa)**2)
+!!    grid%ht(i,j) = hm1*exp(-(( float(i-icm)/xa1)**2))   &
+!!               *( (cos(pii*float(i-icm)/xal1))**2 )
+    grid%phb(i,1,j) = g*grid%ht(i,j)
+    grid%php(i,1,j) = 0.
+    grid%ph0(i,1,j) = grid%phb(i,1,j)
+  ENDDO
+  ENDDO
+
+  CASE (africa_convection)
   DO j=jts,jte
   DO i=its,ite  
     grid%ht(i,j) = hm/(1.+(float(i-icm)/xa)**2)
