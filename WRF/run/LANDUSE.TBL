@@ -29,7 +29,7 @@ WINTER
 12,     12.,   .50,   .95,   50.,    5.,  1.66, 29.2e5,'Tropical or subtropical forest'
 13,     20.,   .15,   .92,   15.,    3.,  2.00, 25.0e5,'Savannah'
 USGS
-41,2, 'ALBD   SLMO   SFEM   SFZ0 THERIN   SCFX   SFHC   '
+62,2, 'ALBD   SLMO   SFEM   SFZ0 THERIN   SCFX   SFHC   '
 SUMMER
 1,      15.,   .10,   .88,   80.,    3.,  1.67, 18.9e5,'Urban and Built-Up Land'
 2,      17.,   .30,  .985,   15.,    4.,  2.71, 25.0e5,'Dryland Cropland and Pasture'

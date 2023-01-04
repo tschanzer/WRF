@@ -634,7 +634,7 @@ CONTAINS
           grid%tmn(i,j) = 280.0
           grid%xland(i,j)     = 1.
           ! determine the desired albedo at this grid point
-          albedo = 1. - exp(((i - icm)/lm)**2)
+          albedo = 1. - exp(-(float(i - icm)/lm)**2)
           ! convert albedo value to corresponding land use index
           grid%lu_index(i,j) = landuse_start_num + nint((albedo - albedo_min)/albedo_step)
         END DO
@@ -642,7 +642,7 @@ CONTAINS
 
 ! for Noah LSM, additional variables need to be initialized
 
-    seabreeze_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+      africa_convection_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
       CASE (SLABSCHEME)
 
@@ -670,7 +670,7 @@ CONTAINS
 
       CASE (RUCLSMSCHEME)
 
-    END SELECT seabreeze_masked_fields
+    END SELECT africa_convection_masked_fields
 
 ! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
       CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &

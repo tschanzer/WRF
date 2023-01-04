@@ -6,6 +6,7 @@
 *.output
 wrfinput_d*
 *.save*
+*.backup*
 
 # Other files
 #############
