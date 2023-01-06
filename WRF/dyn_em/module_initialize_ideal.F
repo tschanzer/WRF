@@ -3,14 +3,14 @@
 !
 
 !  This MODULE holds the routines which are used to perform various initializations
-!  for the individual domains.  
+!  for the individual domains.
 
 !  This MODULE CONTAINS the following routines:
 
 !  initialize_field_test - 1. Set different fields to different constant
 !                             values.  This is only a test.  If the correct
 !                             domain is not found (based upon the "id")
-!                             then a fatal error is issued.               
+!                             then a fatal error is issued.
 
 !-----------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ CONTAINS
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
 ! NOTE:  Modified to remove all but arrays of rank 4 or more from the
 !        argument list.  Arrays with rank>3 are still problematic due to the
-!        above-noted fie- and pox-ities.  TBH 20061129.  
+!        above-noted fie- and pox-ities.  TBH 20061129.
 
    SUBROUTINE init_domain ( grid )
 
@@ -54,7 +54,7 @@ CONTAINS
    !  Local data.
    INTEGER :: idum1, idum2
 
-   
+
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
      CALL init_domain_rk( grid &
@@ -138,8 +138,8 @@ CONTAINS
 
 !  variables for africa_convection
    REAL :: albedo
-   REAL, PARAMETER :: albedo_min=0., albedo_step=0.05
-   INTEGER, PARAMETER :: landuse_start_num=42
+   REAL :: albedo_min, albedo_step
+   INTEGER :: landuse_start_num
 
    SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -276,8 +276,8 @@ CONTAINS
 
   CASE (africa_convection)
   ! parameters borrowed from hill2d_x
-   hm = 100.
-   xa = 5.0
+   hm = 2000.
+   xa = 20.0
 
   ! parameters retained from seabreeze2d_x
    stretch_grid = .true.
@@ -612,6 +612,11 @@ CONTAINS
 !  here we initialize data that currently is not initialized
 !  in the input data
 
+    ! LANDUSE.TBL constants
+    landuse_start_num = 42
+    albedo_min = 0.15
+    albedo_step = 0.005
+
       DO j = jts, jte
         DO i = its, ite
           grid%msft(i,j)     = 1.
@@ -628,49 +633,50 @@ CONTAINS
           grid%cosa(i,j)     = 1.
           grid%e(i,j)        = 0.
           grid%f(i,j)        = 0.
-          grid%xlat(i,j)     = 30.
+          grid%xlat(i,j)     = 20.
           grid%xlong(i,j)     = 0.
           grid%tsk(i,j) = 280.0
           grid%tmn(i,j) = 280.0
           grid%xland(i,j)     = 1.
           ! determine the desired albedo at this grid point
-          albedo = 1. - exp(-(float(i - icm)/lm)**2)
+          albedo = 0.25 - 0.1*exp(-(float(i - icm)/lm)**2)
           ! convert albedo value to corresponding land use index
           grid%lu_index(i,j) = landuse_start_num + nint((albedo - albedo_min)/albedo_step)
         END DO
       END DO
 
 ! for Noah LSM, additional variables need to be initialized
+! but we will not be using Noah LSM for africa_convection
 
-      africa_convection_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+    !   africa_convection_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-      CASE (SLABSCHEME)
+    !   CASE (SLABSCHEME)
 
-      CASE (LSMSCHEME)
+    !   CASE (LSMSCHEME)
 
-        DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-              IF (grid%xland(i,j) .lt. 1.5) THEN
-                  grid%vegfra(i,j) = 50.
-                  grid%canwat(i,j) = 0.
-                  grid%ivgtyp(i,j) = 18
-                  grid%isltyp(i,j) = 8
-                  grid%xice(i,j) = 0.
-                  grid%snow(i,j) = 0.
-              ELSE
-                  grid%vegfra(i,j) = 0.
-                  grid%canwat(i,j) = 0.
-                  grid%ivgtyp(i,j) = 16
-                  grid%isltyp(i,j) = 14
-                  grid%xice(i,j) = 0.
-                  grid%snow(i,j) = 0.
-              ENDIF
-            END DO
-        END DO
+    !     DO j = jts , MIN(jde-1,jte)
+    !         DO i = its , MIN(ide-1,ite)
+    !           IF (grid%xland(i,j) .lt. 1.5) THEN
+    !               grid%vegfra(i,j) = 50.
+    !               grid%canwat(i,j) = 0.
+    !               grid%ivgtyp(i,j) = 18
+    !               grid%isltyp(i,j) = 8
+    !               grid%xice(i,j) = 0.
+    !               grid%snow(i,j) = 0.
+    !           ELSE
+    !               grid%vegfra(i,j) = 0.
+    !               grid%canwat(i,j) = 0.
+    !               grid%ivgtyp(i,j) = 16
+    !               grid%isltyp(i,j) = 14
+    !               grid%xice(i,j) = 0.
+    !               grid%snow(i,j) = 0.
+    !           ENDIF
+    !         END DO
+    !     END DO
 
-      CASE (RUCLSMSCHEME)
+    !   CASE (RUCLSMSCHEME)
 
-    END SELECT africa_convection_masked_fields
+    ! END SELECT africa_convection_masked_fields
 
 ! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
       CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
@@ -748,10 +754,10 @@ CONTAINS
      DO k=1, kde
       grid%znw(k) = model_config_rec%eta_levels(k)
      ENDDO
-     
+
  ! Check the value of the first and last eta level for our domain,
  ! then check that the vector of eta levels is only decreasing
- 
+
      IF (model_config_rec%eta_levels(1) .NE. 1.0) THEN
         CALL wrf_error_fatal("--- ERROR: the first specified eta_level is not 1.0")
      ENDIF
@@ -841,7 +847,7 @@ CONTAINS
    cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3)
    grid%cf1  = grid%fnp(2) + cof1
    grid%cf2  = grid%fnm(2) - cof1 - cof2
-   grid%cf3  = cof2       
+   grid%cf3  = cof2
 
    grid%cfn  = (.5*grid%dnw(kde-1)+grid%dn(kde-1))/grid%dn(kde-1)
    grid%cfn1 = -.5*grid%dnw(kde-1)/grid%dn(kde-1)
@@ -1009,7 +1015,7 @@ CONTAINS
   ideal_terrain: SELECT CASE ( model_config_rec%ideal_case )
   CASE (hill2d_x)
   DO j=jts,jte
-  DO i=its,ite  
+  DO i=its,ite
     grid%ht(i,j) = hm/(1.+(float(i-icm)/xa)**2)
 !!    grid%ht(i,j) = hm1*exp(-(( float(i-icm)/xa1)**2))   &
 !!               *( (cos(pii*float(i-icm)/xal1))**2 )
@@ -1021,7 +1027,7 @@ CONTAINS
 
   CASE (africa_convection)
   DO j=jts,jte
-  DO i=its,ite  
+  DO i=its,ite
     grid%ht(i,j) = hm/(1.+(float(i-icm)/xa)**2)
 !!    grid%ht(i,j) = hm1*exp(-(( float(i-icm)/xa1)**2))   &
 !!               *( (cos(pii*float(i-icm)/xal1))**2 )
@@ -1033,7 +1039,7 @@ CONTAINS
 
   CASE (quarter_ss, convrad, squall2d_x, squall2d_y, grav2d_x, b_wave, seabreeze2d_x)
   DO j=jts,jte
-  DO i=its,ite  
+  DO i=its,ite
     grid%ht(i,j) = 0.
     grid%phb(i,1,j) = g*grid%ht(i,j)
     grid%php(i,1,j) = 0.
@@ -1127,7 +1133,7 @@ CONTAINS
                      nl_max, nl_in, theta_surf )
   ENDIF
   DO J = jts, min(jde-1,jte)
-  
+
   IF ( model_config_rec%ideal_case .EQ. b_wave )THEN
 !  get sounding for this point
 !   debug = .false.  !  this will turn off print of the sounding
@@ -1137,7 +1143,7 @@ CONTAINS
   ENDIF
   DO I = its, min(ide-1,ite)
 !  At this point grid%p_top is already set. find the DRY mass in the column
-!  by interpolating the DRY pressure.  
+!  by interpolating the DRY pressure.
    pd_surf = interp_0( pd_in, zk, grid%phb(i,1,j)/g, nl_in )
 !  compute the perturbation mass and the full mass
     grid%MU_1(i,j) = pd_surf-grid%p_top - grid%MUB(i,j)
@@ -1150,7 +1156,7 @@ CONTAINS
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
       grid%t_2(i,k,j)          = grid%t_1(i,k,j)
-      
+
     enddo
 !  integrate the hydrostatic equation (from the RHS of the bigstep
 !  vertical momentum equation) down from the top to get grid%p.
@@ -1186,7 +1192,7 @@ CONTAINS
       grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
                    ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,kk-1,j)+ &
                     (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,kk-1,j)  )
-                                                   
+
       grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
       grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
     ENDDO
@@ -1578,13 +1584,13 @@ CONTAINS
                                  (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
                grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
             ENDDO
-      
+
             DO kk  = 2,kte
               k = kk - 1
               grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
                            ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,kk-1,j)+ &
                             (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,kk-1,j)  )
-      
+
               grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
               grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
             ENDDO
@@ -1849,7 +1855,7 @@ CONTAINS
 
   !  Turn dry potential temperature into moist potential temperature
       !  at the very end of this routine
-      !  This field will be in the model IC and and used to construct the 
+      !  This field will be in the model IC and and used to construct the
       !  BC file.
 
       IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN

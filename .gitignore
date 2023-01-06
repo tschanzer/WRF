@@ -13,6 +13,7 @@ wrfinput_d*
 .vscode
 *~
 *.o????????
+wrfrst_*
 
 # WRF/WPS temporary files
 #########################
