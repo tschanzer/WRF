@@ -136,10 +136,14 @@ CONTAINS
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
-!  variables for africa_convection
-   REAL :: albedo
-   REAL :: albedo_min, albedo_step
-   INTEGER :: landuse_start_num
+  ! albedo parameters for africa_convection
+  REAL :: albedo, albedo_min, albedo_step, albedo_background, albedo_pert
+  INTEGER :: landuse_start_num
+  ! topography parameters for africa_convection
+  REAL :: mountain_base
+  ! other parameters for africa_convection
+  REAL :: africa_convection_tsk, africa_convection_tmn
+  REAL :: africa_convection_lat, africa_convection_long
 
    SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -275,23 +279,27 @@ CONTAINS
    write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
 
   CASE (africa_convection)
-  ! parameters borrowed from hill2d_x
-   hm = 2000.
-   xa = 20.0
+    ! topography parameters
+    mountain_base = 500.  ! background terrain height in m
+    hm = 0.  ! mountain height in m (relative to background)
 
-  ! parameters retained from seabreeze2d_x
-   stretch_grid = .true.
-   delt = 6.
-!   z_scale = .40
-   z_scale = 8000./config_flags%ztop
-   pi = 2.*asin(1.0)
-   write(6,*) ' pi is ',pi
-   nxc = (ide-ids)/2
-   nyc = jde/2
-   icm = ide/2
-! lm is the half width of the land in terms of grid points
-   lm = 25
-   write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
+    ! albedo parameters
+    landuse_start_num = 42  ! index of the first custom land use category
+    albedo_min = 0.15  ! lowest custom albedo in LANDUSE.TBL
+    albedo_step = 0.0025  ! custom albedo step in LANDUSE.TBL
+    albedo_background = 0.35  ! background albedo value
+    albedo_pert = 0.  ! magnitude of albedo perturbation
+
+    ! shared parameters
+    icm = ide/2  ! centre of mountain and albedo perturbation in grid points
+    xa = 37.5  ! mountain and albedo perturbation half-width in grid points (NOT km)
+
+    ! other parameters
+    stretch_grid = .true.  ! causes eta levels to be read from namelist.input
+    africa_convection_tsk = 321.928  ! surface skin temp in K, mean from Mantsis et al. (2020)
+    africa_convection_tmn = 297.201  ! soil temp at lower boundary in K, mean from Mantsis et al. (2020)
+    africa_convection_lat = 25.  ! latitude of domain in deg
+    africa_convection_long = 0.  ! longitude of domain in deg
 
   CASE (les)
   !  FOR LES, set stretch to false
@@ -594,11 +602,10 @@ CONTAINS
     mminlu2 = ' '
     mminlu2(1:4) = 'USGS'
     CALL nl_set_mminlu(1, mminlu2)
-!   CALL nl_set_mminlu(1, 'USGS')
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
-    CALL nl_set_cen_lat(1,20.)
-    CALL nl_set_cen_lon(1,0.)
+    CALL nl_set_cen_lat(1, africa_convection_lat)
+    CALL nl_set_cen_lon(1, africa_convection_long)
     CALL nl_set_truelat1(1,0.)
     CALL nl_set_truelat2(1,0.)
     CALL nl_set_moad_cen_lat (1,0.)
@@ -606,86 +613,47 @@ CONTAINS
     CALL nl_set_pole_lon (1,0.)
     CALL nl_set_pole_lat (1,90.)
     CALL nl_set_map_proj(1,0)
-!   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
     CALL nl_get_iswater(1,grid%iswater)
 
-!  here we initialize data that currently is not initialized
-!  in the input data
+    !  here we initialize data that currently is not initialized
+    !  in the input data
 
-    ! LANDUSE.TBL constants
-    landuse_start_num = 42
-    albedo_min = 0.15
-    albedo_step = 0.005
-
-      DO j = jts, jte
-        DO i = its, ite
-          grid%msft(i,j)     = 1.
-          grid%msfu(i,j)     = 1.
-          grid%msfv(i,j)     = 1.
-          grid%msftx(i,j)    = 1.
-          grid%msfty(i,j)    = 1.
-          grid%msfux(i,j)    = 1.
-          grid%msfuy(i,j)    = 1.
-          grid%msfvx(i,j)    = 1.
-          grid%msfvy(i,j)    = 1.
-          grid%msfvx_inv(i,j)= 1.
-          grid%sina(i,j)     = 0.
-          grid%cosa(i,j)     = 1.
-          grid%e(i,j)        = 0.
-          grid%f(i,j)        = 0.
-          grid%xlat(i,j)     = 20.
-          grid%xlong(i,j)     = 0.
-          grid%tsk(i,j) = 280.0
-          grid%tmn(i,j) = 280.0
-          grid%xland(i,j)     = 1.
-          ! determine the desired albedo at this grid point
-          albedo = 0.25 - 0.1*exp(-(float(i - icm)/lm)**2)
-          ! convert albedo value to corresponding land use index
-          grid%lu_index(i,j) = landuse_start_num + nint((albedo - albedo_min)/albedo_step)
-        END DO
+    DO j = jts, jte
+      DO i = its, ite
+        grid%msft(i,j)     = 1.
+        grid%msfu(i,j)     = 1.
+        grid%msfv(i,j)     = 1.
+        grid%msftx(i,j)    = 1.
+        grid%msfty(i,j)    = 1.
+        grid%msfux(i,j)    = 1.
+        grid%msfuy(i,j)    = 1.
+        grid%msfvx(i,j)    = 1.
+        grid%msfvy(i,j)    = 1.
+        grid%msfvx_inv(i,j)= 1.
+        grid%sina(i,j)     = 0.
+        grid%cosa(i,j)     = 1.
+        grid%e(i,j)        = 0.
+        grid%f(i,j)        = 0.
+        grid%xlat(i,j) = africa_convection_lat
+        grid%xlong(i,j) = africa_convection_long
+        grid%tsk(i,j) = africa_convection_tsk
+        grid%tmn(i,j) = africa_convection_tmn
+        grid%xland(i,j) = 1.
+        ! determine the desired albedo at this grid point
+        albedo = albedo_background - albedo_pert*exp(-(float(i - icm)/xa)**2)
+        ! convert albedo value to corresponding land use index
+        grid%lu_index(i,j) = landuse_start_num + nint((albedo - albedo_min)/albedo_step)
       END DO
+    END DO
 
-! for Noah LSM, additional variables need to be initialized
-! but we will not be using Noah LSM for africa_convection
-
-    !   africa_convection_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
-
-    !   CASE (SLABSCHEME)
-
-    !   CASE (LSMSCHEME)
-
-    !     DO j = jts , MIN(jde-1,jte)
-    !         DO i = its , MIN(ide-1,ite)
-    !           IF (grid%xland(i,j) .lt. 1.5) THEN
-    !               grid%vegfra(i,j) = 50.
-    !               grid%canwat(i,j) = 0.
-    !               grid%ivgtyp(i,j) = 18
-    !               grid%isltyp(i,j) = 8
-    !               grid%xice(i,j) = 0.
-    !               grid%snow(i,j) = 0.
-    !           ELSE
-    !               grid%vegfra(i,j) = 0.
-    !               grid%canwat(i,j) = 0.
-    !               grid%ivgtyp(i,j) = 16
-    !               grid%isltyp(i,j) = 14
-    !               grid%xice(i,j) = 0.
-    !               grid%snow(i,j) = 0.
-    !           ENDIF
-    !         END DO
-    !     END DO
-
-    !   CASE (RUCLSMSCHEME)
-
-    ! END SELECT africa_convection_masked_fields
-
-! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
-      CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
-                      grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
-                      grid%tsk,grid%tmn,grid%zs,grid%dzs,model_config_rec%num_soil_layers, &
-                      model_config_rec%sf_surface_physics(grid%id), &
-                                    ids,ide, jds,jde, kds,kde,&
-                                    ims,ime, jms,jme, kms,kme,&
-                                    its,ite, jts,jte, kts,kte )
+    ! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
+    CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
+                    grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
+                    grid%tsk,grid%tmn,grid%zs,grid%dzs,model_config_rec%num_soil_layers, &
+                    model_config_rec%sf_surface_physics(grid%id), &
+                                  ids,ide, jds,jde, kds,kde,&
+                                  ims,ime, jms,jme, kms,kme,&
+                                  its,ite, jts,jte, kts,kte )
 
    CASE (les)
 
@@ -1028,9 +996,7 @@ CONTAINS
   CASE (africa_convection)
   DO j=jts,jte
   DO i=its,ite
-    grid%ht(i,j) = hm/(1.+(float(i-icm)/xa)**2)
-!!    grid%ht(i,j) = hm1*exp(-(( float(i-icm)/xa1)**2))   &
-!!               *( (cos(pii*float(i-icm)/xal1))**2 )
+    grid%ht(i,j) = mountain_base + hm*exp(-(float(i - icm)/xa)**2)
     grid%phb(i,1,j) = g*grid%ht(i,j)
     grid%php(i,1,j) = 0.
     grid%ph0(i,1,j) = grid%phb(i,1,j)
