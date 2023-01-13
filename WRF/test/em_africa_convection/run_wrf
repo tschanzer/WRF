@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -l walltime=0:10:00
-#PBS -l mem=4GB
+#PBS -l walltime=2:30:00
+#PBS -l mem=8GB
 #PBS -l ncpus=4
 #PBS -j oe
 #PBS -q normal
