@@ -281,7 +281,7 @@ CONTAINS
   CASE (africa_convection)
     ! topography parameters
     mountain_base = 500.  ! background terrain height in m
-    hm = 0.  ! mountain height in m (relative to background)
+    hm = 500.  ! mountain height in m (relative to background)
 
     ! albedo parameters
     landuse_start_num = 42  ! index of the first custom land use category
