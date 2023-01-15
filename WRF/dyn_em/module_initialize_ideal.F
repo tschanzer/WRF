@@ -288,7 +288,7 @@ CONTAINS
     albedo_min = 0.15  ! lowest custom albedo in LANDUSE.TBL
     albedo_step = 0.0025  ! custom albedo step in LANDUSE.TBL
     albedo_background = 0.35  ! background albedo value
-    albedo_pert = 0.05  ! magnitude of albedo perturbation
+    albedo_pert = 0.10  ! magnitude of albedo perturbation
 
     ! shared parameters
     icm = ide/2  ! centre of mountain and albedo perturbation in grid points
