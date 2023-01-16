@@ -281,14 +281,14 @@ CONTAINS
   CASE (africa_convection)
     ! topography parameters
     mountain_base = 500.  ! background terrain height in m
-    hm = 2500.  ! mountain height in m (relative to background)
+    hm = 1500.  ! mountain height in m (relative to background)
 
     ! albedo parameters
     landuse_start_num = 42  ! index of the first custom land use category
     albedo_min = 0.15  ! lowest custom albedo in LANDUSE.TBL
     albedo_step = 0.0025  ! custom albedo step in LANDUSE.TBL
     albedo_background = 0.35  ! background albedo value
-    albedo_pert = 0.10  ! magnitude of albedo perturbation
+    albedo_pert = 0.20  ! magnitude of albedo perturbation
 
     ! shared parameters
     icm = ide/2  ! centre of mountain and albedo perturbation in grid points
