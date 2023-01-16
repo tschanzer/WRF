@@ -1,5 +1,5 @@
  &time_control
- history_outname                     = '/scratch/w42/ts1181/WRF_africa_convection_elev1500_alb20/wrfout_d<domain>_<date>',
+ history_outname                     = '/scratch/w42/ts1181/WRF_africa_convection_elev2500_alb20/wrfout_d<domain>_<date>',
  run_days                            = 7,
  run_hours                           = 0,
  run_minutes                         = 0,
