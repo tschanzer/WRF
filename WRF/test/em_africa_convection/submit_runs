@@ -1,0 +1,106 @@
+#!/bin/bash
+
+topo_array=(0 500 1500 2500)
+alb_array=(0 05 10 20)
+for topo_val in "${topo_array[@]}"; do
+    for alb_val in "${alb_array[@]}"; do
+        # skip unwanted runs
+        if [[ $topo_val -eq 500 && $alb_val -ne 0 ]]; then
+            continue
+        elif [[ $alb_val -eq 05 && $topo_val -ne 0 ]]; then
+            continue
+        fi
+
+        # set run name
+        if [[ "$topo_val" -eq 0 && "$alb_val" -eq 0 ]]; then
+            run_name='control'
+        else
+            run_name="elev${topo_val}_alb${alb_val}"
+        fi
+
+        # return to WRF directory
+        cd /g/data/w42/ts1181/WRF_fork/WRF
+
+        # make output directory
+        scratch_path="/scratch/w42/ts1181/WRF_africa_convection_${run_name}_2week"
+        if [[ ! -d "$scratch_path" ]]; then
+            mkdir "$scratch_path"
+        fi
+
+        # edit module_initialize_ideal.F
+        init_file='/g/data/w42/ts1181/WRF_fork/WRF/dyn_em/module_initialize_ideal.F'
+        topo_line="    hm = ${topo_val}.  ! mountain height in m (relative to background)"
+        alb_line="    albedo_pert = 0.${alb_val}  ! magnitude of albedo perturbation"
+        sed -i "284s/.*/${topo_line}/" "$init_file"
+        sed -i "291s/.*/${alb_line}/" "$init_file"
+
+        # edit namelist.input
+        namelist_file='/g/data/w42/ts1181/WRF_fork/WRF/test/em_africa_convection/namelist.input'
+        history_line=" history_outname                     = '${scratch_path}/wrfout_d<domain>_<date>',"
+        sed -i "2s|.*|${history_line}|" "$namelist_file"
+
+        # submit compile job
+        compile_script='/g/data/w42/ts1181/WRF_fork/WRF/run_compile'
+        compile_output=($($compile_script --compile_case em_africa_convection -a 76 -n 0))
+        compile_jobid="${compile_output[-1]}"
+        echo "Compiling ${run_name}: $compile_jobid"
+
+        # wait for the compilation to finish before starting next loop
+        while true; do
+            sleep 10
+            if qstat -swx $compile_jobid | grep -q ' F '; then
+                break
+            fi
+        done
+
+        # move executables to scratch once compilation is complete
+        parent_path='/g/data/w42/ts1181/WRF_fork/WRF/test/em_africa_convection'
+        cp "${parent_path}/namelist.input" "$scratch_path"
+        cp "${parent_path}/input_sounding" "$scratch_path"
+        cp -L "${parent_path}/RRTM_DATA" "$scratch_path"
+        cp -L "${parent_path}/LANDUSE.TBL" "$scratch_path"
+        cp -L "${parent_path}/ideal.exe" "$scratch_path"
+        cp -L "${parent_path}/wrf.exe" "$scratch_path"
+
+        # run ideal.exe once files have been moved
+        cd "$scratch_path"
+        ideal_jobid=$(qsub <<EOF
+            #!/bin/bash
+            #PBS -N run_ideal_$run_name
+            #PBS -l walltime=300
+            #PBS -l mem=4GB
+            #PBS -l ncpus=1
+            #PBS -j oe
+            #PBS -q normal
+            #PBS -l wd
+            #PBS -W umask=0022
+            #PBS -l storage=gdata/w42+scratch/w42
+            #PBS -P w42
+
+            ${scratch_path}/ideal.exe
+EOF
+        )
+        echo "ideal.exe for ${run_name}: $ideal_jobid"
+
+        # run wrf.exe once ideal.exe has finished
+        wrf_jobid=$(qsub <<EOF
+            #!/bin/bash
+            #PBS -N run_wrf_$run_name
+            #PBS -l walltime=5:00:00
+            #PBS -l mem=4GB
+            #PBS -l ncpus=1
+            #PBS -j oe
+            #PBS -q normal
+            #PBS -l wd
+            #PBS -W umask=0022
+            #PBS -W depend=afterok:$ideal_jobid
+            #PBS -l storage=gdata/w42+scratch/w42
+            #PBS -P w42
+
+            sleep 30
+            ${scratch_path}/wrf.exe
+EOF
+        )
+        echo "wrf.exe for ${run_name}: $wrf_jobid"
+    done
+done
