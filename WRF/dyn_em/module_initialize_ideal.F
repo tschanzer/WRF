@@ -413,8 +413,8 @@ CONTAINS
          grid%sina(i,j)     = 0.
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.
-         grid%xlat(i,j)     = 10.
-         grid%f(i,j)        = 2.5e-5
+         grid%xlat(i,j)     = 0.
+         grid%f(i,j)        = 0.
          grid%xlong(i,j)     = 0.
 ! Hard-wire the ocean-land configuration
 ! all ocean
