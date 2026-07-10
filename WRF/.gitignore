@@ -33,6 +33,7 @@ wrf
 wrfbdy_d*
 wrfinput_d*
 wrfout_d*
+wrfrst_d*
 *.nc
 rsl.out.*
 rsl.error.*
