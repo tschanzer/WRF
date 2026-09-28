@@ -416,15 +416,12 @@ CONTAINS
          grid%xlat(i,j)     = 0.
          grid%f(i,j)        = 0.
          grid%xlong(i,j)     = 0.
-! Hard-wire the ocean-land configuration
-! all ocean
-!       if (i .ge. (icm-lm) .and. i .lt. (icm+lm)) then
-!        grid%xland(i,j)     = 1.
-!        grid%lu_index(i,j)  = 18
-!else
-         grid%xland(i,j)     = 2.
-         grid%lu_index(i,j)  = 16
-!end if
+         if (config_flags%convrad_lu_index .eq. 16) then
+           grid%xland(i,j) = 2.
+         else
+           grid%xland(i,j) = 1.
+         end if
+         grid%lu_index(i,j) = config_flags%convrad_lu_index
       END DO
    END DO
 

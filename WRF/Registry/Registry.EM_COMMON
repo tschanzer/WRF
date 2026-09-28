@@ -2337,6 +2337,7 @@ rconfig   integer nproc_x                 namelist,domains	1             -1     
 rconfig   integer nproc_y		  namelist,domains	1             -1      -      "nproc_y"              "-1 means not set"      ""
 rconfig   integer irand                   namelist,domains	1             0       -      "irand"           ""      ""
 rconfig   real    dt                      derived              max_domains    2.      h     "dt"        "TEMPORAL RESOLUTION"      "SECONDS"
+rconfig   integer convrad_lu_index        namelist,domains	1             16      -      "convrad_lu_index"      "Land use index for em_convrad case"      ""
 
 rconfig   integer fft_used                derived               1             0       -     "fft_used"  "stochastic, spectral nudging, polar filters - turn on if these are used"
 rconfig   integer cu_used                 derived               1             0       -     "cu_used"   "turn on if any cumulus scheme is used"
