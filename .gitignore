@@ -53,3 +53,4 @@ WRF/tools/fseeko64_test
 WRF/tools/fseeko_test
 WRF/tools/gen_comms.c
 WRF/tools/registry
+namelist.input.backup.*

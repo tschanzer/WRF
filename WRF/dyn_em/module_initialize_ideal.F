@@ -416,7 +416,7 @@ CONTAINS
          grid%xlat(i,j)     = 0.
          grid%f(i,j)        = 0.
          grid%xlong(i,j)     = 0.
-         if (config_flags%convrad_lu_index .eq. 16) then
+         if ((config_flags%convrad_lu_index .eq. 16) .or. (config_flags%convrad_force_xland2)) then
            grid%xland(i,j) = 2.
          else
            grid%xland(i,j) = 1.
