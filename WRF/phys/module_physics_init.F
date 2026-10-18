@@ -1968,11 +1968,6 @@ CHARACTER(LEN=8) :: name
           EMBCK(I,J)=SFEM(IS,ISN)
           EMISS(I,J)=EMBCK(I,J)
           MAVAIL(I,J)=SLMO(IS,ISN)
-          IF(IS.NE.ISWATER)THEN
-            XLAND(I,J)=1.0
-          ELSE
-            XLAND(I,J)=2.0
-          ENDIF
 !    SET SEA-ICE POINTS TO LAND WITH ICE/SNOW SURFACE PROPERTIES
           XICEM(I,J)=XICE(I,J)
           IF(XICE(I,J).GE.xice_threshold)THEN
